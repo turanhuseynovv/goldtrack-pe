@@ -1,6 +1,6 @@
 # ⛏️ GoldTrack PE — Taktiksel Karar Destek Sistemi (DSS)
 
-Peru altın madenciliği operasyonları için geliştirilmiş, **veri ve model güdümlü (Data & Model-Driven)** taktiksel seviyede Karar Destek Sistemi. Orta ve üst düzey yöneticilerin **6–12 aylık planlama ufkunda** veri odaklı operasyonel kararlar almasını sağlar.
+Peru altın madenciliği taktiksel karar almak için geliştirilmiş, **veri ve model güdümlü (Data & Model-Driven)** taktiksel seviyede Karar Destek Sistemi. Orta düzey yöneticilerin **6–12 aylık planlama ufkunda** veri odaklı taktiksel kararlar almasını sağlar.
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)

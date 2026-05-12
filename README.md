@@ -18,19 +18,19 @@ GoldTrack PE, Peru genelindeki **39 aktif altın madenini** tek bir portföy ola
 ## 🖥️ Ekran Görüntüleri
 
 ### Taktiksel Genel Bakış
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](dashboard.png)
 
 ### Saha Haritası
-![Harita](screenshots/map.png)
+![Harita](map.png)
 
 ### Maden Performans Karnesi
-![Performans](screenshots/performance.png)
+![Performans](performance.png)
 
 ### Taktiksel Analiz Araçları
-![Analiz](screenshots/analysis.png)
+![Analiz](sanalysis.png)
 
 ### Bütçe ve Finansal Kontrol
-![Finans](screenshots/finance.png)
+![Finans](finance.png)
 
 ---
 

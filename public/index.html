@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoldTrack PE - Tactical Decision Support System</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#1e293b', 900: '#0f172a' },
+                        gold: { 400: '#fbbf24', 500: '#f59e0b' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        oswald: ['Oswald', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-slate-100 flex h-screen text-slate-800 pt-8 overflow-hidden font-sans"> 
+
+    <div class="ticker-wrap shadow-md">
+        <div class="ticker-move font-mono" id="liveGoldTicker">
+            TACTICAL SYSTEM ONLINE... MONITORING Q4 BUDGET VARIANCES...
+        </div>
+    </div>
+
+    <aside class="w-72 bg-slate-850 text-white flex flex-col shadow-2xl z-40 h-full flex-shrink-0 border-r border-slate-700">
+        <div class="p-6 border-b border-slate-700 flex items-center bg-slate-900">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Peru.svg" class="w-10 h-auto shadow-sm mr-4 rounded-sm" alt="Peru Flag">
+            <div>
+                <h1 class="text-2xl font-bold text-gold-400 tracking-wide leading-none font-oswald">GOLDTRACK</h1>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-1 font-semibold">Tactical DSS v3.1</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2 mt-2 overflow-y-auto">
+            <div class="px-2 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">İzleme & Kontrol</div>
+            <button class="nav-btn active group" data-page="home"><span class="mr-3 text-xl inline-block">⏱️</span> Anlık Durum</button>
+            <button class="nav-btn group" data-page="mines"><span class="mr-3 text-xl inline-block">📋</span> Maden Performansı</button>
+            <button class="nav-btn group" data-page="sixMonth"><span class="mr-3 text-xl inline-block">📉</span> Bütçe & Finans</button>
+
+            <div class="px-2 mt-6 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Taktiksel Planlama</div>
+            <button class="nav-btn group" data-page="analysis"><span class="mr-3 text-xl inline-block">🎯</span> Hedef Analizi</button>
+            <button class="nav-btn group" data-page="investments"><span class="mr-3 text-xl inline-block">🔧</span> İyileştirme Fırsatları</button>
+            
+            <div class="pt-6 mt-6 border-t border-slate-700">
+                <button class="nav-btn group bg-blue-900/20 border border-blue-800/30 text-blue-200 hover:bg-blue-900/40" data-page="summary">
+                    <span class="mr-3 text-xl">🤖</span> Akıllı Rapor (AI)
+                </button>
+            </div>
+        </nav>
+        
+        <div class="p-4 text-[10px] text-gray-500 text-center bg-slate-900 border-t border-slate-700">
+            <div>Executive Decision Console</div>
+            <div class="mt-1">© 2026 GoldTrack Enterprise</div>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-100">
+        
+        <header class="bg-white px-6 py-3 shadow-sm z-30 flex justify-between items-center border-b border-gray-200 h-24 lg:h-20">
+            <div class="flex-shrink-0 min-w-[200px]">
+                <h2 class="text-xl font-bold text-slate-800 font-oswald" id="headerTitle">Taktiksel Genel Bakış</h2>
+                <p class="text-xs text-slate-500 font-medium" id="headerSubtitle">Performans Takibi</p>
+            </div>
+
+            <div class="hidden lg:flex flex-1 justify-center px-8">
+                <div class="flex items-center justify-between w-full max-w-4xl bg-slate-50 border border-gray-200 rounded-full px-6 py-2 shadow-inner">
+                    <div class="flex flex-col justify-center mr-6 border-r border-gray-200 pr-6">
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest whitespace-nowrap">VARSAYIM</span>
+                        <span class="text-xs text-slate-700 font-bold whitespace-nowrap">Bütçe Kuru (Altın)</span>
+                    </div>
+                    <div class="flex-1 flex items-center gap-3 min-w-[200px]">
+                        <span class="text-xs font-bold text-red-400 whitespace-nowrap">Kötü (-30%)</span>
+                        <input type="range" id="goldPriceSlider" min="-30" max="30" value="0" step="1" 
+                               class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer accent-gold-500 focus:outline-none">
+                        <span class="text-xs font-bold text-green-500 whitespace-nowrap">İyi (+30%)</span>
+                    </div>
+                    <div class="flex items-center gap-4 ml-8 pl-6 border-l border-gray-200 min-w-[160px] justify-end">
+                        <div class="text-right leading-tight">
+                            <div class="text-[9px] text-gray-400 font-bold uppercase whitespace-nowrap">REVİZE BÜTÇE</div>
+                            <div id="simulatedPriceDisplay" class="text-sm font-mono font-bold text-slate-800 tracking-tight whitespace-nowrap">$1,950</div>
+                        </div>
+                        <div id="priceChangeValue" class="text-sm font-bold text-white bg-blue-600 px-3 py-1.5 rounded-lg shadow-sm min-w-[55px] text-center flex-shrink-0">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4 pl-4 border-l border-gray-200 flex-shrink-0">
+                <div class="text-right hidden xl:block">
+                    <div class="text-sm font-bold text-slate-800"> </div>
+                    <div class="text-[10px] text-green-500 font-bold uppercase tracking-wider flex items-center justify-end">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></span> Online
+                    </div>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center border-2 border-white shadow-md cursor-pointer hover:scale-105 transition">
+                    <span class="text-lg">👷</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="content" class="flex-1 p-8 overflow-y-auto relative scroll-smooth">
+            
+            <section id="home" class="page-section animate-fade-in">
+                <!-- Attention Required Panel (Step 3) -->
+                <div id="attentionRequiredPanel" class="mb-8 hidden">
+                    <div class="flex items-center justify-between mb-4 border-b border-red-200 pb-2">
+                        <h3 class="text-xl font-bold text-red-600 font-oswald flex items-center"><span class="mr-2 text-2xl">🚨</span> Acil Müdahale Gerektirenler</h3>
+                        <span class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold shadow-inner" id="alertCountBadge">0 Uyarı</span>
+                    </div>
+                    <div id="alertsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Alerts injected via JS -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition stat-card-hover border-l-4 border-l-green-500 group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Gerçekleşen Kâr (YTD)</p>
+                                <p class="stat-value text-4xl font-bold text-slate-800 mt-2 group-hover:text-green-600 transition" id="kpi-roi">...</p>
+                            </div>
+                            <div class="p-2 bg-green-50 rounded-lg text-green-600">💵</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition stat-card-hover border-l-4 border-l-blue-500 group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Kalan Bütçe (CAPEX)</p>
+                                <p class="stat-value text-4xl font-bold text-slate-800 mt-2 group-hover:text-blue-600 transition" id="kpi-capex">...</p>
+                            </div>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">📉</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition stat-card-hover border-l-4 border-l-yellow-500 group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Birim Maliyet (AISC)</p>
+                                <p class="stat-value text-4xl font-bold text-slate-800 mt-2 group-hover:text-yellow-600 transition" id="kpi-aisc">...</p>
+                            </div>
+                            <div class="p-2 bg-yellow-50 rounded-lg text-yellow-600">⚠️</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition stat-card-hover border-l-4 border-l-purple-500 group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Yıl Sonu Üretim Hedefi</p>
+                                <p class="stat-value text-4xl font-bold text-slate-800 mt-2 group-hover:text-purple-600 transition" id="kpi-reserve">...</p>
+                            </div>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600">🎯</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow rounded-2xl border border-gray-200 overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 flex items-center"><span class="mr-2">🏭</span> Saha Durumu</h3>
+                        <span class="text-xs bg-white border px-2 py-1 rounded text-gray-500">Canlı Üretim Akışı</span>
+                    </div>
+                    <div id="mapContainer"></div>
+                </div>
+            </section>
+
+            <section id="mines" class="page-section hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Maden Performans Karnesi</h2>
+                        <p class="text-sm text-gray-500">Bütçe uyumu ve verimlilik takibi</p>
+                    </div>
+                    <div class="flex gap-3 mt-4 md:mt-0">
+                        <button id="btnExportExcel" class="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm transition transform hover:-translate-y-0.5 font-semibold text-sm">
+                            <span class="mr-2 text-lg">📊</span> Raporu İndir (.csv)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th onclick="sortTable('name')" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none group">
+                                    Maden Adı <span class="ml-1 text-gray-300 group-hover:text-gray-600">↕</span>
+                                </th>
+                                <th onclick="sortTable('region')" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none group">
+                                    Bölge <span class="ml-1 text-gray-300 group-hover:text-gray-600">↕</span>
+                                </th>
+                                <th onclick="sortTable('tactical_score')" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none group">
+                                    Perf. Puanı <span class="ml-1 text-gray-300 group-hover:text-gray-600">↕</span>
+                                </th>
+                                <th onclick="sortTable('capex_required_usd')" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none group">
+                                    Kalan Bütçe ($M) <span class="ml-1 text-gray-300 group-hover:text-gray-600">↕</span>
+                                </th>
+                                <th onclick="sortTable('env_risk_level')" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none group">
+                                    Risk <span class="ml-1 text-gray-300 group-hover:text-gray-600">↕</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="mineTableBody" class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="sixMonth" class="page-section hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-700">Bütçe Gerçekleşmeleri (Budget vs Actual)</h3>
+                        <p class="text-sm text-gray-400">Son 6 aylık nakit akışı ve sapma analizi</p>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-1 flex shadow-sm" id="financial-filters">
+                        <button class="px-4 py-1.5 text-xs font-bold rounded-md bg-slate-800 text-white transition shadow-sm" onclick="updateFinancials('6m', this)">6 Ay</button>
+                        <button class="px-4 py-1.5 text-xs font-bold rounded-md text-gray-600 hover:bg-gray-100 transition" onclick="updateFinancials('1y', this)">1 Yıl</button>
+                        <button class="px-4 py-1.5 text-xs font-bold rounded-md text-gray-600 hover:bg-gray-100 transition" onclick="updateFinancials('all', this)">Tümü</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Gerçekleşen Gelir</p>
+                        <h3 class="text-3xl font-bold text-slate-800 mt-2" id="fin-revenue">...</h3>
+                        <p class="text-xs mt-2 font-bold flex items-center">
+                            <span id="fin-growth-arrow" class="mr-1"></span> <span id="fin-growth-rate"></span> <span class="text-gray-400 font-normal ml-1">hedef sapması</span>
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><p class="text-xs font-bold text-gray-400 uppercase tracking-wider"> Gider (OPEX)</p><h3 class="text-3xl font-bold text-slate-800 mt-2" id="fin-expense">...</h3></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Net Nakit Akışı</p><h3 class="text-3xl font-bold text-slate-800 mt-2" id="fin-profit">...</h3></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Kâr Marjı Gerçekleşmesi</p><h3 class="text-3xl font-bold text-slate-800 mt-2" id="fin-margin">...</h3></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><h3 class="font-bold text-slate-700 mb-6 flex items-center"><span class="mr-2">📊</span> Gelir & Gider Trendi (Bütçe Kıyaslamalı)</h3><div id="apex-main-chart" class="w-full h-[350px]"></div></div>
+                    <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-200"><h3 class="font-bold text-slate-700 mb-6 flex items-center"><span class="mr-2">🥯</span> Maliyet Kırılımı</h3><div id="apex-donut-chart" class="w-full h-[300px] flex items-center justify-center"></div></div>
+                </div>
+            </section>
+
+            <section id="analysis" class="page-section hidden animate-fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800">Taktiksel Analiz Araçları</h2>
+                    <p class="text-gray-500 mt-1">Performans yönetim simülasyonları.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="btn-analysis-tornado" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition cursor-pointer group hover:border-blue-300">
+                         <div class="flex items-center mb-4"><span class="text-3xl mr-3 group-hover:scale-125 transition">📉</span><h3 class="text-xl font-bold text-slate-800">Bütçe Sapma Analizi</h3></div>
+                         <p class="text-sm text-gray-500 leading-relaxed">Hangi kalemlerde bütçeyi aştık? Enerji, Personel veya Lojistik sapmalarını incele.</p>
+                    </div>
+                    <div id="btn-analysis-breakeven" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition cursor-pointer group hover:border-green-300">
+                         <div class="flex items-center mb-4"><span class="text-3xl mr-3 group-hover:scale-125 transition">⚖️</span><h3 class="text-xl font-bold text-slate-800">Başabaş Noktası (Aylık)</h3></div>
+                         <p class="text-sm text-gray-500 leading-relaxed">Bu ay zarar etmemek için minimum ne kadar üretim yapmalıyız?</p>
+                    </div>
+                    <div id="btn-analysis-montecarlo" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition cursor-pointer group hover:border-purple-300">
+                         <div class="flex items-center mb-4"><span class="text-3xl mr-3 group-hover:scale-125 transition">🔮</span><h3 class="text-xl font-bold text-slate-800">Yıl Sonu Tahmini (Forecast)</h3></div>
+                         <p class="text-sm text-gray-500 leading-relaxed">Mevcut üretim hızıyla yıl sonu hedefini tutturma olasılığı nedir?</p>
+                    </div>
+                    <div id="btn-analysis-benchmark" class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition cursor-pointer group hover:border-orange-300">
+                         <div class="flex items-center mb-4"><span class="text-3xl mr-3 group-hover:scale-125 transition">⚡</span><h3 class="text-xl font-bold text-slate-800">Verimlilik Kıyaslama</h3></div>
+                         <p class="text-sm text-gray-500 leading-relaxed">Madenlerin ton başına maliyet ve üretim verimliliğine göre sıralanması.</p>
+                    </div>
+                </div>
+                <div id="analysisResultArea" class="mt-8 hidden">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200 relative">
+                        <button onclick="document.getElementById('analysisResultArea').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-3xl">&times;</button>
+                        <h3 id="analysisTitle" class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Analiz Sonuçları</h3>
+                        <div id="analysisContent" class="h-[450px] w-full"><canvas id="analysisChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="investments" class="page-section hidden animate-fade-in">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800"> İyileştirme Fırsatları</h2>
+                <p class="text-sm text-gray-500 mb-4">Verimliliği artırmak için müdahale edilmesi gereken sahalar</p>
+                <ul id="investmentList" class="grid grid-cols-1 gap-4"></ul>
+            </section>
+
+            <section id="summary" class="page-section hidden animate-fade-in">
+                 <div class="bg-white p-10 rounded-2xl shadow-lg border border-gray-200 mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-8 mb-8">
+                        <div>
+                            <h2 class="text-4xl font-bold text-slate-800 font-oswald">Taktiksel Durum Raporu</h2>
+                            <p class="text-gray-500 mt-2 font-mono text-sm" id="summaryDate">...</p>
+                        </div>
+                        <div class="mt-4 md:mt-0 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100 uppercase tracking-wider">✨ AI Analysis Engine v3.1</div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div class="lg:col-span-2 prose prose-slate max-w-none text-gray-600 leading-loose" id="aiReportContent">
+                            <div class="animate-pulse space-y-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-4 bg-gray-200 rounded"></div></div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="bg-slate-50 p-6 rounded-2xl border border-gray-200">
+                                <h3 class="font-bold text-slate-800 mb-4 border-b border-gray-200 pb-2 flex items-center"><span class="mr-2">⚡</span> Hızlı İstihbarat</h3>
+                                <div class="space-y-4 text-sm" id="quickStatsContent"></div>
+                            </div>
+                            <button id="downloadPdfBtn" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition hover:-translate-y-1 flex items-center justify-center">
+                                <span class="text-xl mr-2">📄</span> PDF Raporu İndir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="mineDetailPanel" class="fixed top-0 right-0 w-[500px] h-full bg-white shadow-2xl border-l border-gray-200 transform translate-x-full transition-transform duration-300 z-[60] overflow-y-auto">
+        <div class="p-6 border-b border-gray-100 bg-slate-50 flex justify-between items-center sticky top-0 z-10 backdrop-blur-sm bg-opacity-90">
+            <div><h2 id="detailMineName" class="text-2xl font-bold text-slate-800 font-oswald">Maden Detayı</h2><p class="text-xs text-gray-500 mt-1">Operasyonel ve Finansal Detaylar</p></div>
+            <button id="closeDetailPanel" class="text-gray-400 hover:text-red-500 text-4xl transition">&times;</button>
+        </div>
+        <div class="p-8 space-y-8">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Bölge</span><span id="detailRegion" class="font-bold text-slate-800 text-lg"></span></div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Risk Seviyesi</span><span id="detailRisk" class="font-bold text-slate-800 text-lg"></span></div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm"><span class="text-[10px] text-green-600 font-bold uppercase tracking-wider block mb-1">Performans Skoru</span><span id="detailRoi" class="font-bold text-green-700 text-2xl"></span></div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm"><span class="text-[10px] text-blue-600 font-bold uppercase tracking-wider block mb-1">Birim Maliyet (AISC)</span><span id="detailCapex" class="font-bold text-blue-700 text-lg"></span></div>
+            </div>
+            <div><h3 class="font-bold text-slate-700 mb-4 flex items-center"><span class="mr-2">🏭</span> 12 Aylık Üretim</h3><div class="relative w-full h-[220px] bg-slate-50 rounded-lg border border-gray-100 p-2"><canvas id="detailProductionChart"></canvas></div></div>
+            <div><h3 class="font-bold text-slate-700 mb-4 flex items-center"><span class="mr-2">💵</span> Net Kâr Analizi</h3><div class="relative w-full h-[220px] bg-slate-50 rounded-lg border border-gray-100 p-2"><canvas id="detailProfitChart"></canvas></div></div>
+            <!-- YoY Chart (Step 4) -->
+            <div><h3 class="font-bold text-slate-700 mb-4 flex items-center"><span class="mr-2">📈</span> Yıllık Karşılaştırma (YoY)</h3><div class="relative w-full h-[250px] bg-slate-50 rounded-lg border border-gray-100 p-2"><canvas id="detailYoyChart"></canvas></div></div>
+            <div><h3 class="font-bold text-slate-700 mb-4 flex items-center"><span class="mr-2">🛰️</span> Uydu Görüntüsü</h3><div id="detailMap" class="w-full rounded-xl border border-gray-300 h-[280px] shadow-inner"></div></div>
+        </div>
+    </div>
+
+    <!-- Decision Audit Modal (Step 5) -->
+    <div id="decisionModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[70] hidden flex justify-center items-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200">
+            <div class="bg-slate-850 p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white font-oswald flex items-center"><span class="mr-2">⚖️</span> Karar Günlüğü (Audit Trail)</h3>
+                <button onclick="document.getElementById('decisionModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl transition">&times;</button>
+            </div>
+            <div class="p-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <p class="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Tetikleyen Uyarı</p>
+                    <h4 class="font-bold text-slate-800" id="decisionAlertTitle">...</h4>
+                    <p class="text-sm text-gray-600 mt-1" id="decisionAlertMessage">...</p>
+                </div>
+                
+                <form id="decisionForm" class="space-y-4">
+                    <input type="hidden" id="decisionMineId">
+                    <input type="hidden" id="decisionAlertLevel">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Aksiyon Kategorisi</label>
+                        <select id="decisionActionCategory" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gold-500 outline-none">
+                            <option value="OPEX_REDUCTION">OPEX Kesintisi / Taşeron İptali</option>
+                            <option value="CAPEX_INJECTION">Acil CAPEX Aktarımı</option>
+                            <option value="PRODUCTION_HALT">Üretimi Yavaşlatma / Durdurma</option>
+                            <option value="AUDIT">Saha Denetimi Başlatma</option>
+                            <option value="OTHER">Diğer Taktiksel Müdahale</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Yönetici Karar Notu</label>
+                        <textarea id="decisionText" rows="3" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gold-500 outline-none" placeholder="Alınan kararın gerekçesini yazın... (Örn: Lojistik taşeronu değiştirilecek)"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">90 Günlük Başarı Kriteri</label>
+                            <select id="decisionSuccessMetric" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gold-500 outline-none">
+                                <option value="AISC">AISC Düşüşü</option>
+                                <option value="ROI">ROI Artışı</option>
+                                <option value="PRODUCTION">Üretim Hacmi Artışı</option>
+                                <option value="RISK">Çevresel Risk Azalması</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Hedef Değer (Target)</label>
+                            <input type="number" id="decisionTargetValue" step="0.1" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gold-500 outline-none" placeholder="Örn: 950 (AISC için)">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="document.getElementById('decisionModal').classList.add('hidden')" class="px-5 py-2.5 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">İptal</button>
+                        <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-slate-850 hover:bg-slate-900 rounded-lg shadow-md transition flex items-center">
+                            <span class="mr-2">💾</span> Kararı Kaydet & Takibe Al
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+    
+    <script>
+        window.sortTable = function(key) {
+            const event = new CustomEvent('sort-request', { detail: key });
+            document.dispatchEvent(event);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "goldtrack-pe",
+  "version": "3.2.0",
+  "description": "GoldTrack PE — Tactical Decision Support System for Peru Gold Mining Operations. Provides 6-12 month operational analytics, budget variance tracking, and scenario-based forecasting for middle management.",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "keywords": [
+    "dss",
+    "decision-support-system",
+    "mining",
+    "analytics",
+    "dashboard",
+    "nodejs",
+    "express",
+    "mysql"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.10.1"
+  }
+}

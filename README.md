@@ -11,7 +11,7 @@ Peru altın madenciliği operasyonları için geliştirilmiş taktiksel seviyede
 
 ## 📌 Proje Hakkında
 
-GoldTrack PE, Peru genelindeki **39 aktif altın madenini** tek bir portföy olarak izleyen hibrit bir Karar Destek Sistemi'dir. Orta ve üst düzey yöneticilere **6–12 aylık planlama ufkunda** veri odaklı operasyonel kararlar aldırır. Hem **veri güdümlü** hem de **model güdümlü** analitik yetenekleri bir arada sunar.
+GoldTrack PE, Peru genelindeki **39 aktif altın madenini** tek bir portföy olarak izleyen hibrit bir Karar Destek Sistemi'dir. Orta ve üst düzey yöneticilere **6–12 aylık planlama ufkunda** veri odaklı taktiksel kararlar aldırır. Hem **veri güdümlü** hem de **model güdümlü** analitik yetenekleri bir arada sunar.
 
 ---
 
